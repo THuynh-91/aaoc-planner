@@ -1,3 +1,5 @@
+import datetime
+
 def main_menu():
     # Select an option on which definition to use
     print("""Select an option:
@@ -21,6 +23,10 @@ Selection: """, end="") # Added end="" here
         print("Not an option")
         # Exit
 
+def avaiable(string):
+    # Checks if Account Name MM/YYYY is accurate
+    exit
+
 def aaoc():
 
     # Finds out the average age of history of account opening dates.
@@ -33,7 +39,28 @@ def aaoc():
     while True: 
         user_input = input("Enter account info (or 'finish'): ")
 
-        if user_input.lower() == 'finish':
+        # Checks if the user has finished his submission
+        if user_input == 'finish':
             break
 
+        elif not user_input:
+            print("Input cannot be empty. Please try again.")
+
+            continue
+
+        # Checks if the year is over the current year, or if the month is not yet reached in the current year
+        elif((int( user_input[-4:]) > c_year) or 
+             ((int( user_input[-7:-5]) > c_month) and  int(user_input[-4:]) == c_year )):
+            
+
+
+
+c_year = datetime.datetime.now().year
+c_month = datetime.datetime.now().month
+
+print(c_month == int('04'))
+
+
+
+print (c_year, c_month)
 aaoc()
