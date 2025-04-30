@@ -7,7 +7,7 @@ def main_menu():
 1: Calculate Average Age of Credit
 2: Plan a New Credit Card
 
-Selection: """, end="") # Added end="" here
+Selection: """, end="") 
 
     option = input()
 
@@ -41,6 +41,10 @@ def aaoc():
 
         # Checks if the user has finished his submission
         if user_input == 'finish':
+
+            print("Input complete")
+            print(account_dates)
+
             break
 
         elif not user_input:
@@ -48,9 +52,32 @@ def aaoc():
 
             continue
 
-        # Checks if the year is over the current year, or if the month is not yet reached in the current year
-        elif((int( user_input[-4:]) > c_year) or 
-             ((int( user_input[-7:-5]) > c_month) and  int(user_input[-4:]) == c_year )):
+        else:
+            try:
+                parts = user_input.split()
+                if len(parts) < 2:
+                    raise ValueError("Invalid format: Missing account name or date.")
+                
+                date_part = parts[-1]
+                if '/' not in date_part:
+                    raise ValueError("Invalid format: Date must contain '/'.")
+                
+                datetime.datetime.strptime(date_part, "%m/%Y")
+
+                month_str, year_str = date_part.split('/')
+                month = int(month_str)
+                year = int(year_str)
+
+                if (year > c_year) or (year == c_year and month > c_month):
+                    print(f"Invalid date: {date_part} is in the future. PLease try again.")
+                    continue
+
+                print("Successfully added.")
+                account_dates.append(user_input)
+
+            except (ValueError, IndexError) as e:
+                print(f"Error: {e}. PLease use 'Account Name MM/YYYY' format.")
+                continue
             
 
 
