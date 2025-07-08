@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 def main_menu():
     # Select an option on which definition to use
@@ -7,7 +7,7 @@ def main_menu():
 1: Calculate Average Age of Credit
 2: Plan a New Credit Card
 
-Selection: """, end="") 
+Selection: """, end="") # Added end="" here
 
     option = input()
 
@@ -23,71 +23,51 @@ Selection: """, end="")
         print("Not an option")
         # Exit
 
-def avaiable(string):
-    # Checks if Account Name MM/YYYY is accurate
-    exit
-
 def aaoc():
 
     # Finds out the average age of history of account opening dates.
-    print("Enter each credit account's opening date in the format 'Account Name MM/YYYY'")
+    print("\nEnter each credit account's opening date in the format 'Account Name MM/YYYY'")
     print("ex: Discover 09/2024")
-    print("Type 'finish' when you are done.")
+    print("Type 'finish' when you are done.\n")
 
-    account_dates = []
+    account_list = []
     
     while True: 
-        user_input = input("Enter account info (or 'finish'): ")
+        user_input = input("Enter account info (or 'finish'): ").strip()
 
-        # Checks if the user has finished his submission
-        if user_input == 'finish':
-
-            print("Input complete")
-            print(account_dates)
-
+        if user_input.lower() == 'finish':
             break
 
-        elif not user_input:
-            print("Input cannot be empty. Please try again.")
+        try:
+            name_part, date_part = user_input.rsplit(" ", 1)
+            open_date = datetime.strptime(date_part, "%m/%Y")
+            account_list.append((name_part, open_date))
+        except ValueError:
+            print("\nInvalid format. Please use: AccountName MM/YYYY")
 
-            continue
+    aaCalc(account_list)
+    return account_list
 
-        else:
-            try:
-                parts = user_input.split()
-                if len(parts) < 2:
-                    raise ValueError("Invalid format: Missing account name or date.")
-                
-                date_part = parts[-1]
-                if '/' not in date_part:
-                    raise ValueError("Invalid format: Date must contain '/'.")
-                
-                datetime.datetime.strptime(date_part, "%m/%Y")
+def aaCalc(accounts):
+    if not accounts:
+        print("No accounts provided.")
+        return
+    today = datetime.now()
+    total_months = 0
 
-                month_str, year_str = date_part.split('/')
-                month = int(month_str)
-                year = int(year_str)
+    for name, date in accounts:
+        delta_years = today.year - date.year
+        delta_months = today.month - date.month
+        months = delta_years * 12 + delta_months
+        total_months += months
+    
+    avg_months = total_months // len(accounts)
+    years = avg_months // 12
+    months = avg_months % 12
 
-                if (year > c_year) or (year == c_year and month > c_month):
-                    print(f"Invalid date: {date_part} is in the future. PLease try again.")
-                    continue
+    print(accounts)
+    print(f"\nYou entered {len(accounts)} accounts.")
+    print(f"Your Average Age of Credit: {years} years and {months} months\n")
 
-                print("Successfully added.")
-                account_dates.append(user_input)
-
-            except (ValueError, IndexError) as e:
-                print(f"Error: {e}. PLease use 'Account Name MM/YYYY' format.")
-                continue
-            
-
-
-
-c_year = datetime.datetime.now().year
-c_month = datetime.datetime.now().month
-
-print(c_month == int('04'))
-
-
-
-print (c_year, c_month)
-aaoc()
+if __name__ == "__main__":
+    main_menu()
