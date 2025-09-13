@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from utils import valid_date
+from utils import valid_date, valid_closed_date, age_format
 
 
 '''
@@ -31,17 +31,24 @@ class Account():
 
         if not name.strip(): #Checks if name is empty or blank
             raise ValueError("Name cannot be blank")
+        
         if is_open.lower() in ["yes", "y", "true"]:
             self.is_open = True
         elif is_open.lower() in ["no", "n", "false"]:
             self.is_open = False
         else:
             raise ValueError("Invalid input! Use: yes/no y/n true/false") 
+        
         if closed_date:
             self.closed_date = valid_date(closed_date)
         else:
-            self.closed_date = closed_date
+            self.closed_date = None
         
+        if not self.is_open and self.closed_date is None:
+            raise ValueError("If you account is not open, it needs a closed date!")
+        
+        if self.is_open and self.closed_date is not None:
+            raise ValueError("Open accounts cannot have a closed date!")
         
         self.name = name
         self.date_opened = valid_date(date_opened)
@@ -53,7 +60,33 @@ class Account():
         
         self.name = new_name.strip()
 
-    def edit_opened_date(self, new_date: date):
-        pass
+    def edit_opened_date(self, new_date: str):
+        self.date_opened = valid_date(new_date)
+    
+    def close(self, on_date: str):
+        if not self.is_open:
+            raise ValueError("Account is already closed")
+
+        close_date = valid_date(on_date)
+        if not valid_closed_date(self.date_opened, close_date):
+            raise ValueError("Close date must be after open date")
+        
+        self.is_open = False
+        self.closed_date = close_date
+        
+    def reopen(self):
+        if self.is_open:
+            raise ValueError("account is already open")
+
+        self.is_open = True
+        self.closed_date = None
+
+    def current_age(self):
+        if self.is_open:
+            return (date.today() - self.date_opened).days
+        else:
+            return (self.closed_date - self.date_opened).days
+
+
 
 
