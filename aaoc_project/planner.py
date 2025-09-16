@@ -1,9 +1,16 @@
 from models import Account
 from portfolio import Portfolio
 from utils import valid_date, age_format, valid_closed_date
-from datetime import date, timedelta
-from dateutil.relativedelta import relativedelta
+from datetime import date
+import calendar
 from copy import deepcopy
+
+def add_months(source_date, months):
+    month = source_date.month - 1 + months
+    year = source_date.year + month // 12
+    month = month % 12 + 1
+    day = min(source_date.day, calendar.monthrange(year, month)[1])
+    return source_date.replace(year=year, month=month, day=day)
 
 class Planner():
     def __init__(self, portfolio: Portfolio):
@@ -14,7 +21,7 @@ class Planner():
 
         self.original_portfolio = portfolio
         self.working_accounts = self._create_working_copy()
-        self.screnarios = []
+        self.scenarios = []
 
     def _create_working_copy(self):
         return deepcopy(self.original_portfolio.accounts)
@@ -101,8 +108,27 @@ class Planner():
                 return f"To reach AAOC of {target_years} years {target_months} months, you will need to wait {wait_years} years {wait_months} months or until {temp_date.strftime('%m-%d-%Y')}" 
 
             iterations += 1
-            temp_date += relativedelta(months=1)
+            temp_date = add_months(temp_date, 1)
         return "Target AAOC not reachable within reasonable timeframe"
+    
+    def earliest_new_account_date(self, min_aaoc_years: int, min_aaoc_months: int):
+        min_aaoc_decimal = min_aaoc_years + (min_aaoc_months / 12)
+        temp_date = date.today()
+        iterations = 0
         
+        while iterations < 9999:
+            aaoc_result = self.calculate_aaoc_with_new_account(temp_date.strftime('%m-%d-%Y'), temp_date.strftime('%m-%d-%Y'))
+            parts = aaoc_result.split(" years and ")
+            years = int(parts[0])
+            months = int(parts[1].replace(" months", ""))
+
+            parsed_decimal = years + (months / 12)
+
+            if parsed_decimal >= min_aaoc_decimal:
+                return f"You can open a new account on {temp_date.strftime('%m-%d-%Y')} and maintain minimum AAOC"
+            
+            temp_date = add_months(temp_date, 1)
+            iterations += 1
+        return "Target AAOC not reachable within reasonable timeframe"
 
         
