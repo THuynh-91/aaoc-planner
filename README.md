@@ -92,10 +92,10 @@ Chase, 03-15-2020
 
 ### Main Menu Navigation
 ```
-1. Create Portfolio          - Start a new portfolio
-2. Create Planner           - Run planning scenarios
-3. Exit                     - Close application
-4. Import                   - Load saved portfolio
+1. Create Portfolio        - Start a new portfolio
+2. Create Planner          - Run planning scenarios
+3. Exit                    - Close application
+4. Import                  - Load saved portfolio
 5. How to Use              - Detailed tutorial
 6. Select Portfolio        - Switch between portfolios
 7. List Portfolios         - View all portfolios
