@@ -48,7 +48,7 @@ class CLI:
         print()
     
     def show_main_menu(self):
-        print("Main Menu:")
+        print("\nMain Menu:")
         print("1. Create Portfolio")
         print("2. Create Planner (Must have a useable Portfolio)")
         print("3. Exit")
@@ -218,6 +218,10 @@ class CLI:
             print("Portfolio name cannot be empty.")
             return
         
+        if name in self.portfolios:
+            print(f"Portfolio '{name}' already exists. Choose a different name.")
+            return
+        
         try:
             self.portfolios[name] = Portfolio(name)
             self.current_portfolio = self.portfolios[name]
@@ -227,28 +231,40 @@ class CLI:
             print(f"Error: {e}")
 
     def create_planner(self):
-        if self.current_portfolio is None:
-            print("Error: You must create a portfolio first before using the planner.")
+        if not self.portfolios:
+            print("Error: No portfolios available. Create a portfolio first.")
             return
         
-        if not self.current_portfolio.accounts:
+        print("\nAvailable portfolios:")
+        for name, portfolio in self.portfolios.items():
+            account_count = len(portfolio.accounts)
+            print(f"- {name} ({account_count} accounts)")
+        
+        portfolio_name = input("\nEnter portfolio name to create planner for: ").strip()
+        
+        if portfolio_name not in self.portfolios:
+            print("Portfolio not found.")
+            return
+        
+        selected_portfolio = self.portfolios[portfolio_name]
+        
+        if not selected_portfolio.accounts:
             print("Error: Portfolio must contain at least one account to create planner.")
             return
-        
-        portfolio_name = self.current_portfolio.name
         
         if portfolio_name in self.planners:
             print(f"Planner for '{portfolio_name}' already exists. Using existing planner.")
             self.current_planner = self.planners[portfolio_name]
         else:
             try:
-                self.planners[portfolio_name] = Planner(self.current_portfolio)
+                self.planners[portfolio_name] = Planner(selected_portfolio)
                 self.current_planner = self.planners[portfolio_name]
                 print(f"Planner created using portfolio '{portfolio_name}'")
             except Exception as e:
                 print(f"Error creating planner: {e}")
                 return
         
+        self.current_portfolio = selected_portfolio
         self.planning_menu()
 
     def scenario_future_aaoc(self):
@@ -301,15 +317,28 @@ class CLI:
             target_years = int(input("Enter target years: ").strip())
             target_months = int(input("Enter target months (0-11): ").strip())
             
+            print(f"Debug: Parsed target_years={target_years}, target_months={target_months}")
+            
             if target_years < 0 or target_months < 0 or target_months > 11:
                 print("Invalid input. Years must be >= 0, months must be 0-11.")
                 return
             
+            print("Debug: About to call planner method...")
             result = self.current_planner.time_to_target_aaoc(target_years, target_months)
+            print(f"Debug: Got result: {result}")
             print(f"\nResult: {result}")
-        except ValueError:
+            
+        except ValueError as ve:
+            print(f"Debug: ValueError caught: {ve}")
+            print(f"Debug: ValueError type: {type(ve)}")
+            import traceback
+            traceback.print_exc()
             print("Error: Please enter valid numbers for years and months.")
         except Exception as e:
+            print(f"Debug: Other exception: {e}")
+            print(f"Debug: Exception type: {type(e)}")
+            import traceback
+            traceback.print_exc()
             print(f"Error: {e}")
         
         input("\nPress Enter to continue...")
@@ -322,13 +351,16 @@ class CLI:
             min_years = int(input("Enter minimum AAOC years: ").strip())
             min_months = int(input("Enter minimum AAOC months (0-11): ").strip())
             
+            print(f"Debug: min_years={min_years}, min_months={min_months}")  # Add this line
+            
             if min_years < 0 or min_months < 0 or min_months > 11:
                 print("Invalid input. Years must be >= 0, months must be 0-11.")
                 return
             
             result = self.current_planner.earliest_new_account_date(min_years, min_months)
             print(f"\nResult: {result}")
-        except ValueError:
+        except ValueError as ve:
+            print(f"ValueError details: {ve}")  # Add this line
             print("Error: Please enter valid numbers for years and months.")
         except Exception as e:
             print(f"Error: {e}")

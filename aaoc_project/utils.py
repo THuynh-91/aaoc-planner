@@ -29,6 +29,17 @@ def age_format(total_days: int):
         months = 0
     return f'{years} years and {months} months'
 
+def valid_planning_date(given_date: str):
+    if not DATE_PATTERN.match(given_date):
+        raise ValueError("This formatting is invalid! Use: MM-DD-YYYY")
+    
+    try: 
+        dt = datetime.strptime(given_date, '%m-%d-%Y').date()
+    except ValueError:
+        raise ValueError("This is an invalid date")
+    
+    return dt
+
 def show_tutorial():
     print("\n" + "="*60)
     print("                   AAOC CALCULATOR GUIDE")

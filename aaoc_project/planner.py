@@ -1,9 +1,9 @@
-from models import Account
-from portfolio import Portfolio
-from utils import valid_date, age_format, valid_closed_date
-from datetime import date
+from datetime import date, timedelta
 import calendar
 from copy import deepcopy
+from models import Account
+from portfolio import Portfolio  
+from utils import valid_date, age_format, valid_closed_date, valid_planning_date
 
 def add_months(source_date, months):
     month = source_date.month - 1 + months
@@ -60,22 +60,25 @@ class Planner():
         return filtered_accounts
 
     def calculate_aaoc_with_new_account(self, new_account_date: str, target_date: str):
-        new_acc_dt = valid_date(new_account_date)
-        target_dt = valid_date(target_date)
+        new_acc_dt = valid_planning_date(new_account_date)
+        target_dt = valid_planning_date(target_date)
         
-        if not valid_closed_date(new_acc_dt, target_dt):
+        if not valid_closed_date(new_acc_dt, target_dt) and new_acc_dt != target_dt:
             raise ValueError("New Account must be made before target date")
-        else:
-            temp_accounts = self.working_accounts.copy()
-            temp_accounts["TempAcc"] = Account("Temp1", new_account_date)
+        
+        temp_accounts = self.working_accounts.copy()
+        
+        temp_account = Account("Temp1", date.today().strftime('%m-%d-%Y'))
+        temp_account.date_opened = new_acc_dt  
+        temp_accounts["TempAcc"] = temp_account
 
         return self._calculate_aaoc_for_date(temp_accounts, target_dt)
                     
 
     def calculate_future_aaoc(self, target_date: str):
-        target_dt = valid_date(target_date)
-        return self._calculate_aaoc_for_date(self.working_accounts, target_dt) 
-    
+        target_dt = valid_planning_date(target_date)  
+        return self._calculate_aaoc_for_date(self.working_accounts, target_dt)
+        
     def _calculate_aaoc_decimal(self, accounts, target_dt):
         filtered_dates = self._filter_accounts_by_date(accounts, target_dt)
         total_days = 0
@@ -88,8 +91,8 @@ class Planner():
 
     def time_to_target_aaoc(self, target_years: int, target_months: int):
         target_decimal = target_years + (target_months / 12)
-        iterations = 0
         today = date.today()
+        
         current_aaoc = self._calculate_aaoc_decimal(self.working_accounts, today)
         if current_aaoc >= target_decimal:
             return f"Target AAOC of {target_years} years {target_months} months already achieved"
@@ -105,10 +108,11 @@ class Planner():
                 wait_years = total_days // 365
                 wait_months = (total_days % 365) // 30
 
-                return f"To reach AAOC of {target_years} years {target_months} months, you will need to wait {wait_years} years {wait_months} months or until {temp_date.strftime('%m-%d-%Y')}" 
+                return f"To reach AAOC of {target_years} years {target_months} months, you will need to wait {wait_years} years {wait_months} months or until {temp_date.strftime('%m-%d-%Y')}"
 
             iterations += 1
-            temp_date = add_months(temp_date, 1)
+            temp_date = add_months(temp_date, 1)  # THIS LINE WAS MISSING
+            
         return "Target AAOC not reachable within reasonable timeframe"
     
     def earliest_new_account_date(self, min_aaoc_years: int, min_aaoc_months: int):

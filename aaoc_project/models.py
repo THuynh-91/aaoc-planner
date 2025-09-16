@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from utils import valid_date, valid_closed_date, age_format
+from utils import valid_date, valid_closed_date, valid_planning_date
 
 
 '''
@@ -87,6 +87,19 @@ class Account():
         else:
             return (self.closed_date - self.date_opened).days
 
+    def age_on(self, as_of: str):
+        as_of_date = valid_planning_date(as_of)  # Changed from valid_date
+        
+        if as_of_date < self.date_opened:
+            raise ValueError("as_of date must be after the account opening date")
+        
+        if self.is_open:
+            return (as_of_date - self.date_opened).days
+        else:
+            if as_of_date <= self.closed_date:
+                return (as_of_date - self.date_opened).days
+            else:
+                return (self.closed_date - self.date_opened).days
 
 
 
