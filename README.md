@@ -1,6 +1,8 @@
 # AAOC (Average Age of Credit) Calculator
 
 A comprehensive Python application for managing credit accounts and planning credit-related financial scenarios.
+https://github.com/THuynh-91/AAOC/blob/main/main.py (Old Version)
+Decided to implement a improved version of this CLI with more features, and OOP
 
 ## Table of Contents
 - [Overview](#overview)
