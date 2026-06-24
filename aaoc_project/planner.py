@@ -90,9 +90,12 @@ class Planner():
         return avg_days / 365.25
 
     def time_to_target_aaoc(self, target_years: int, target_months: int):
+        if target_years < 0 or target_months < 0:
+            raise ValueError("Target years and months must be non-negative")
+
         target_decimal = target_years + (target_months / 12)
         today = date.today()
-        
+
         current_aaoc = self._calculate_aaoc_decimal(self.working_accounts, today)
         if current_aaoc >= target_decimal:
             return f"Target AAOC of {target_years} years {target_months} months already achieved"
@@ -116,6 +119,9 @@ class Planner():
         return "Target AAOC not reachable within reasonable timeframe"
     
     def earliest_new_account_date(self, min_aaoc_years: int, min_aaoc_months: int):
+        if min_aaoc_years < 0 or min_aaoc_months < 0:
+            raise ValueError("Minimum AAOC years and months must be non-negative")
+
         min_aaoc_decimal = min_aaoc_years + (min_aaoc_months / 12)
         temp_date = date.today()
         iterations = 0
