@@ -3,15 +3,33 @@ import re
 
 DATE_PATTERN = re.compile(r"^\d{2}-\d{2}-\d{4}$") #MM-DD-YYYY format
 
-def valid_date(given_date: str):
+def _parse_date(given_date: str) -> date:
+    """Parse an MM-DD-YYYY string into a date, with clear error messages.
+
+    Shared by valid_date and valid_planning_date so the format contract and
+    error wording stay in one place.
+    """
+    if given_date is None:
+        raise ValueError("Date cannot be empty! Use: MM-DD-YYYY")
+
+    if not isinstance(given_date, str):
+        raise ValueError("Date must be a string in MM-DD-YYYY format")
+
+    given_date = given_date.strip()
+    if not given_date:
+        raise ValueError("Date cannot be empty! Use: MM-DD-YYYY")
+
     if not DATE_PATTERN.match(given_date):
         raise ValueError("This formatting is invalid! Use: MM-DD-YYYY")
-    
-    try: 
-        dt = datetime.strptime(given_date, '%m-%d-%Y').date()
+
+    try:
+        return datetime.strptime(given_date, '%m-%d-%Y').date()
     except ValueError:
         raise ValueError("This is an invalid date")
-    
+
+def valid_date(given_date: str):
+    dt = _parse_date(given_date)
+
     if dt > date.today():
         raise ValueError("Date cannot be in the future.")
     return dt
@@ -20,6 +38,14 @@ def valid_closed_date(open_date: date, closed_date: date):
     return closed_date > open_date
 
 def age_format(total_days: int):
+    if total_days is None:
+        raise ValueError("Cannot format age from None")
+
+    # Guard against negative inputs (e.g. bad date math) by clamping to zero
+    # so callers always get a sensible, non-negative duration string.
+    if total_days < 0:
+        total_days = 0
+
     years_float = total_days / 365.25
     years = int(years_float)
     months = round((years_float - years) * 12)
@@ -30,15 +56,7 @@ def age_format(total_days: int):
     return f'{years} years and {months} months'
 
 def valid_planning_date(given_date: str):
-    if not DATE_PATTERN.match(given_date):
-        raise ValueError("This formatting is invalid! Use: MM-DD-YYYY")
-    
-    try: 
-        dt = datetime.strptime(given_date, '%m-%d-%Y').date()
-    except ValueError:
-        raise ValueError("This is an invalid date")
-    
-    return dt
+    return _parse_date(given_date)
 
 def show_tutorial():
     print("\n" + "="*60)
