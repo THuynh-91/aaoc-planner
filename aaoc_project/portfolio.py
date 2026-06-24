@@ -1,6 +1,6 @@
 from datetime import date
-from models import Account
-from utils import valid_date, age_format
+from .models import Account
+from .utils import valid_date, age_format
 import json
 import base64
 
@@ -49,6 +49,37 @@ class Portfolio():
 
         avg_days = total_days / len(self.accounts)
         return age_format(avg_days)
+
+    def aaoc_days(self):
+        """Return the current AAOC as a raw average number of days."""
+        if not self.accounts:
+            raise ValueError("Cannot calculate AAOC with no accounts in portfolio.")
+        total_days = sum(account.current_age() for account in self.accounts.values())
+        return total_days / len(self.accounts)
+
+    def aaoc_years(self):
+        """Return the current AAOC as a float number of years."""
+        return self.aaoc_days() / 365.25
+
+    def account_breakdown(self):
+        """Return a list of per-account age details, sorted oldest first.
+
+        Each item is a dict with: name, age_days, age_years, status, type.
+        Useful for showing which accounts pull the AAOC up or down.
+        """
+        rows = []
+        for account in self.accounts.values():
+            age_days = account.current_age()
+            rows.append({
+                "name": account.name,
+                "age_days": age_days,
+                "age_years": age_days / 365.25,
+                "status": "Open" if account.is_open else "Closed",
+                "type": account.type or "",
+                "date_opened": account.date_opened,
+            })
+        rows.sort(key=lambda r: r["age_days"], reverse=True)
+        return rows
 
     def export_to_code(self):
         portfolio_data = {

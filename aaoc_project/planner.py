@@ -1,9 +1,9 @@
 from datetime import date, timedelta
 import calendar
 from copy import deepcopy
-from models import Account
-from portfolio import Portfolio  
-from utils import valid_date, age_format, valid_closed_date, valid_planning_date
+from .models import Account
+from .portfolio import Portfolio
+from .utils import valid_date, age_format, valid_closed_date, valid_planning_date
 
 def add_months(source_date, months):
     month = source_date.month - 1 + months
@@ -75,8 +75,16 @@ class Planner():
         return self._calculate_aaoc_for_date(temp_accounts, target_dt)
                     
 
+    def _aaoc_decimal_with_new_account(self, new_acc_dt: date, target_dt: date):
+        """AAOC (in years) at target_dt if a new account is opened on new_acc_dt."""
+        temp_accounts = self.working_accounts.copy()
+        temp_account = Account("Temp1", date.today().strftime('%m-%d-%Y'))
+        temp_account.date_opened = new_acc_dt
+        temp_accounts["__hypothetical_new__"] = temp_account
+        return self._calculate_aaoc_decimal(temp_accounts, target_dt)
+
     def calculate_future_aaoc(self, target_date: str):
-        target_dt = valid_planning_date(target_date)  
+        target_dt = valid_planning_date(target_date)
         return self._calculate_aaoc_for_date(self.working_accounts, target_dt)
         
     def _calculate_aaoc_decimal(self, accounts, target_dt):
@@ -127,16 +135,16 @@ class Planner():
         iterations = 0
         
         while iterations < 9999:
-            aaoc_result = self.calculate_aaoc_with_new_account(temp_date.strftime('%m-%d-%Y'), temp_date.strftime('%m-%d-%Y'))
-            parts = aaoc_result.split(" years and ")
-            years = int(parts[0])
-            months = int(parts[1].replace(" months", ""))
+            # Open the new account on temp_date and measure the AAOC that same
+            # day (the worst case, since the new account is brand new then).
+            aaoc_decimal = self._aaoc_decimal_with_new_account(temp_date, temp_date)
 
-            parsed_decimal = years + (months / 12)
+            if aaoc_decimal >= min_aaoc_decimal:
+                return (f"You can open a new account on "
+                        f"{temp_date.strftime('%m-%d-%Y')} and maintain "
+                        f"minimum AAOC of {min_aaoc_years} years "
+                        f"{min_aaoc_months} months")
 
-            if parsed_decimal >= min_aaoc_decimal:
-                return f"You can open a new account on {temp_date.strftime('%m-%d-%Y')} and maintain minimum AAOC"
-            
             temp_date = add_months(temp_date, 1)
             iterations += 1
         return "Target AAOC not reachable within reasonable timeframe"

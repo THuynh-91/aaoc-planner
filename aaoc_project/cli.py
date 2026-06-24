@@ -1,7 +1,7 @@
-from models import Account
-from portfolio import Portfolio
-from planner import Planner
-from utils import show_tutorial
+from .models import Account
+from .portfolio import Portfolio
+from .planner import Planner
+from .utils import show_tutorial, render_breakdown
 
 class CLI:
     def __init__(self):
@@ -69,11 +69,12 @@ class CLI:
             print("2. Remove Account") 
             print("3. View Accounts")
             print("4. Calculate AAOC")
-            print("5. Export Portfolio")
-            print("6. Return to Main Menu")
-            
+            print("5. View AAOC Timeline (visual breakdown)")
+            print("6. Export Portfolio")
+            print("7. Return to Main Menu")
+
             choice = input("Choice: ").strip()
-            
+
             if choice == "1":
                 self.add_account()
             elif choice == "2":
@@ -83,8 +84,10 @@ class CLI:
             elif choice == "4":
                 self.calculate_current_aaoc()
             elif choice == "5":
-                self.export_portfolio()
+                self.view_timeline()
             elif choice == "6":
+                self.export_portfolio()
+            elif choice == "7":
                 break
             else:
                 print("Invalid choice.")
@@ -184,6 +187,17 @@ class CLI:
             print(f"\nCurrent AAOC: {aaoc_result}")
         except Exception as e:
             print(f"Error calculating AAOC: {e}")
+
+    def view_timeline(self):
+        if not self.current_portfolio.accounts:
+            print("No accounts in portfolio to visualize.")
+            return
+
+        print(f"\n--- AAOC TIMELINE: {self.current_portfolio.name} ---")
+        rows = self.current_portfolio.account_breakdown()
+        aaoc_years = self.current_portfolio.aaoc_years()
+        print(render_breakdown(rows, aaoc_years))
+        input("\nPress Enter to continue...")
 
     def planning_menu(self):
         while True:
