@@ -92,12 +92,34 @@ def show_tutorial():
     
     input("\nPress Enter to return to main menu...")
 
-def main():
-    date1 = valid_date("03-26-2000")
-    date2 = valid_date("05-22-2015")
 
-    print(valid_closed_date(date2,date1)) #Should return False
+def render_breakdown(rows, aaoc_years, bar_width: int = 30):
+    """Return a multi-line string visualizing each account's age as a bar.
 
+    `rows` is the output of Portfolio.account_breakdown(); `aaoc_years` is the
+    portfolio average. Accounts above the average are flagged as helping the
+    AAOC, those below as dragging it down.
+    """
+    if not rows:
+        return "No accounts to display."
 
-if __name__ == "__main__":
-    main()
+    max_years = max((r["age_years"] for r in rows), default=0) or 1
+    lines = []
+    name_width = max((len(r["name"]) for r in rows), default=4)
+    name_width = max(name_width, 4)
+
+    for r in rows:
+        filled = int(round((r["age_years"] / max_years) * bar_width))
+        bar = "#" * filled + "-" * (bar_width - filled)
+        marker = "+" if r["age_years"] >= aaoc_years else "v"
+        lines.append(
+            f"  {r['name']:<{name_width}} | {bar} | "
+            f"{r['age_years']:5.2f}y {marker} ({r['status']})"
+        )
+
+    lines.append("")
+    lines.append(f"  Average Age of Credit: {age_format(aaoc_years * 365.25)} "
+                 f"({aaoc_years:.2f} years)")
+    lines.append("  Legend: + above average (helps AAOC), "
+                 "v below average (lowers AAOC)")
+    return "\n".join(lines)
