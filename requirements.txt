@@ -6,3 +6,11 @@
 #
 # Development / testing uses the standard library `unittest`, so no extra
 # packages are needed there either.
+#
+# OPTIONAL: an interactive web UI (streamlit_app.py) is provided on top of the
+# same core logic. It is the only part that needs a third-party package.
+# Install it only if you want the web UI:
+#
+#     pip install streamlit
+#
+# Then run:  python -m streamlit run streamlit_app.py

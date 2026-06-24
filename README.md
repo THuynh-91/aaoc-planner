@@ -65,6 +65,14 @@ cd aaoc-planner
 python -m aaoc_project
 ```
 
+### Optional Web UI (Streamlit)
+An interactive web UI is built on the same core classes. It is the only part of the project that needs a third-party package:
+```bash
+pip install streamlit
+python -m streamlit run streamlit_app.py
+```
+It offers a portfolio editor, the AAOC metric, a horizontal age-timeline chart (flagging which accounts are above or below the average), the four planning scenarios as forms, and export/import. The command-line tool stays dependency-free.
+
 ### Running the Tests
 The tests use the standard library's `unittest`, so there is nothing to install:
 ```bash
@@ -125,6 +133,7 @@ Leaving any prompt blank cancels it, and Ctrl-C exits safely from anywhere.
 aaoc-planner/
 ├── README.md              # This file
 ├── requirements.txt       # No runtime dependencies (documents Python 3.10+)
+├── streamlit_app.py       # Optional web UI (needs streamlit)
 └── aaoc_project/          # The package
     ├── __init__.py        # Public API: Account, Portfolio, Planner, date helpers
     ├── __main__.py        # Lets `python -m aaoc_project` start the CLI
