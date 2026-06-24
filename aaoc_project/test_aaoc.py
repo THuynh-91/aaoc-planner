@@ -379,5 +379,246 @@ class TestPlannerExtra(unittest.TestCase):
             planner.add_hypothetical_account(Account("Hypo", days_ago(5)))
 
 
+class TestAddMonthsEdge(unittest.TestCase):
+    def test_leap_year_feb29_plus_year_clamps(self):
+        # Feb 29 2020 + 12 months -> Feb 28 2021 (no Feb 29 that year).
+        self.assertEqual(add_months(date(2020, 2, 29), 12), date(2021, 2, 28))
+
+    def test_leap_to_leap_preserves_feb29(self):
+        # Feb 29 2020 + 48 months -> Feb 29 2024 (also a leap year).
+        self.assertEqual(add_months(date(2020, 2, 29), 48), date(2024, 2, 29))
+
+    def test_jan31_plus_one_non_leap(self):
+        # Jan 31 2021 + 1 month -> Feb 28 2021 (non-leap).
+        self.assertEqual(add_months(date(2021, 1, 31), 1), date(2021, 2, 28))
+
+    def test_zero_months_identity(self):
+        self.assertEqual(add_months(date(2022, 7, 4), 0), date(2022, 7, 4))
+
+
+class TestAgeFormatBoundaries(unittest.TestCase):
+    def test_just_under_one_month_rounds_to_zero(self):
+        # ~10 days is well under half a month, so months rounds to 0.
+        self.assertEqual(age_format(10), "0 years and 0 months")
+
+    def test_half_month_rounds_up(self):
+        # ~0.5 months worth of days should round to 1 month.
+        days = 365.25 / 12 * 0.5 + 0.5  # nudge over the rounding boundary
+        self.assertEqual(age_format(days), "0 years and 1 months")
+
+    def test_negative_clamped_to_zero(self):
+        self.assertEqual(age_format(-500), "0 years and 0 months")
+
+    def test_none_raises(self):
+        with self.assertRaises(ValueError):
+            age_format(None)
+
+    def test_exactly_six_months(self):
+        self.assertEqual(age_format(365.25 / 2), "0 years and 6 months")
+
+    def test_eleven_point_six_months_rolls_year(self):
+        # The documented roll-over: never report "12 months".
+        days = 365.25 * (11.6 / 12)
+        self.assertEqual(age_format(days), "1 years and 0 months")
+
+
+class TestAccountTypeNormalization(unittest.TestCase):
+    def test_empty_type_becomes_none(self):
+        acc = Account("X", days_ago(100), type="")
+        self.assertIsNone(acc.type)
+
+    def test_whitespace_type_becomes_none(self):
+        acc = Account("X", days_ago(100), type="   ")
+        self.assertIsNone(acc.type)
+
+    def test_type_is_stripped(self):
+        acc = Account("X", days_ago(100), type="  Loan  ")
+        self.assertEqual(acc.type, "Loan")
+
+    def test_none_type_stays_none(self):
+        acc = Account("X", days_ago(100), type=None)
+        self.assertIsNone(acc.type)
+
+
+class TestAccountCloseDateEquality(unittest.TestCase):
+    def test_closed_date_equal_to_open_rejected(self):
+        # valid_closed_date requires strictly after; equal dates are invalid.
+        d = days_ago(100)
+        with self.assertRaises(ValueError):
+            Account("X", d, is_open="No", closed_date=d)
+
+    def test_close_method_equal_date_rejected(self):
+        d = days_ago(100)
+        acc = Account("X", d)
+        with self.assertRaises(ValueError):
+            acc.close(d)
+
+    def test_valid_closed_date_equal_is_false(self):
+        self.assertFalse(valid_closed_date(date(2020, 1, 1), date(2020, 1, 1)))
+
+    def test_edit_opened_date(self):
+        acc = Account("X", days_ago(100))
+        acc.edit_opened_date(days_ago(50))
+        self.assertEqual(acc.date_opened,
+                         date.today() - timedelta(days=50))
+
+
+class TestImportEdgeCases(unittest.TestCase):
+    def _encode(self, obj):
+        import base64
+        import json
+        return base64.b64encode(json.dumps(obj).encode("utf-8")).decode("utf-8")
+
+    def test_import_empty_code_raises(self):
+        with self.assertRaises(ValueError):
+            Portfolio.import_from_code("")
+
+    def test_import_non_string_raises(self):
+        with self.assertRaises(ValueError):
+            Portfolio.import_from_code(None)
+
+    def test_import_valid_base64_but_not_json(self):
+        import base64
+        bad = base64.b64encode(b"this is not json").decode("utf-8")
+        with self.assertRaises(ValueError):
+            Portfolio.import_from_code(bad)
+
+    def test_import_json_not_object(self):
+        with self.assertRaises(ValueError):
+            Portfolio.import_from_code(self._encode([1, 2, 3]))
+
+    def test_import_missing_name(self):
+        with self.assertRaises(ValueError):
+            Portfolio.import_from_code(self._encode({"accounts": []}))
+
+    def test_import_account_missing_required_field(self):
+        code = self._encode({"name": "P", "accounts": [{"name": "A"}]})
+        with self.assertRaises(ValueError):
+            Portfolio.import_from_code(code)
+
+    def test_import_account_entry_not_object(self):
+        code = self._encode({"name": "P", "accounts": ["oops"]})
+        with self.assertRaises(ValueError):
+            Portfolio.import_from_code(code)
+
+    def test_import_name_only_no_accounts(self):
+        p = Portfolio.import_from_code(self._encode({"name": "Solo"}))
+        self.assertEqual(p.name, "Solo")
+        self.assertEqual(p.accounts, {})
+
+    def test_import_open_account_with_closed_date_rejected(self):
+        # Corrupt: is_open True but a closed_date present -> Account rejects.
+        code = self._encode({
+            "name": "P",
+            "accounts": [{
+                "name": "A",
+                "date_opened": days_ago(100),
+                "is_open": True,
+                "closed_date": days_ago(10),
+            }],
+        })
+        with self.assertRaises(ValueError):
+            Portfolio.import_from_code(code)
+
+
+class TestPlannerHypotheticalKey(unittest.TestCase):
+    def make_portfolio(self):
+        p = Portfolio("P")
+        p.add_account(Account("A", days_ago(365)))
+        return p
+
+    def test_hypothetical_key_no_collision_with_real_name(self):
+        # A real account literally named "__hypothetical_new__" must not be
+        # clobbered by the planner's internal hypothetical key.
+        p = Portfolio("P")
+        p.add_account(Account("A", days_ago(365)))
+        p.add_account(Account("__hypothetical_new__", days_ago(200)))
+        planner = Planner(p)
+        today = date.today().strftime('%m-%d-%Y')
+        # Should not raise and should not lose the real account.
+        result = planner.calculate_aaoc_with_new_account(today, today)
+        self.assertIn("years", result)
+        self.assertIn("__hypothetical_new__", planner.working_accounts)
+
+    def test_hypothetical_key_generation_disambiguates(self):
+        planner = Planner(self.make_portfolio())
+        accounts = {"__hypothetical_new__": object(),
+                    "__hypothetical_new___": object()}
+        key = planner._hypothetical_key(accounts)
+        self.assertNotIn(key, accounts)
+
+    def test_real_tempacc_named_account_not_collided(self):
+        # The planner's temp account is internally named "Hypothetical New
+        # Account" but stored under a private key; a real account named
+        # "TempAcc" must coexist fine.
+        p = Portfolio("P")
+        p.add_account(Account("A", days_ago(365)))
+        p.add_account(Account("TempAcc", days_ago(200)))
+        planner = Planner(p)
+        today = date.today().strftime('%m-%d-%Y')
+        result = planner.calculate_aaoc_with_new_account(today, today)
+        self.assertIn("years", result)
+        self.assertIn("TempAcc", planner.working_accounts)
+
+
+class TestRenderBreakdownFormatting(unittest.TestCase):
+    def test_bar_uses_hash_and_dash(self):
+        p = Portfolio("P")
+        p.add_account(Account("Old", days_ago(1000)))
+        p.add_account(Account("New", days_ago(10)))
+        out = render_breakdown(p.account_breakdown(), p.aaoc_years())
+        self.assertIn("#", out)
+        self.assertIn("-", out)
+        self.assertIn("|", out)
+
+    def test_legend_present(self):
+        p = Portfolio("P")
+        p.add_account(Account("A", days_ago(365)))
+        out = render_breakdown(p.account_breakdown(), p.aaoc_years())
+        self.assertIn("Legend", out)
+        self.assertIn("above average", out)
+        self.assertIn("below average", out)
+
+    def test_closed_status_shown(self):
+        p = Portfolio("P")
+        p.add_account(Account("C", days_ago(500), is_open="No",
+                              closed_date=days_ago(100)))
+        out = render_breakdown(p.account_breakdown(), p.aaoc_years())
+        self.assertIn("(Closed)", out)
+
+    def test_year_value_formatted_two_decimals(self):
+        p = Portfolio("P")
+        p.add_account(Account("A", days_ago(365)))  # ~1.00y
+        out = render_breakdown(p.account_breakdown(), p.aaoc_years())
+        # Each row prints "X.XXy" with two decimal places.
+        import re
+        self.assertTrue(re.search(r"\d+\.\d{2}y", out))
+
+    def test_oldest_account_marked_plus(self):
+        p = Portfolio("P")
+        p.add_account(Account("Old", days_ago(1000)))
+        p.add_account(Account("New", days_ago(10)))
+        out = render_breakdown(p.account_breakdown(), p.aaoc_years())
+        lines = out.splitlines()
+        old_line = next(l for l in lines if l.strip().startswith("Old"))
+        new_line = next(l for l in lines if l.strip().startswith("New"))
+        self.assertIn("+", old_line)   # above average helps
+        self.assertIn("v", new_line)   # below average lowers
+
+
+class TestAccountAgeOnPlanningDates(unittest.TestCase):
+    def test_age_on_future_date_open_account(self):
+        acc = Account("X", days_ago(100))
+        future = (date.today() + timedelta(days=265)).strftime('%m-%d-%Y')
+        # Open account: age grows freely into the future.
+        self.assertEqual(acc.age_on(future), 365)
+
+    def test_age_on_future_closed_account_caps(self):
+        acc = Account("X", days_ago(400), is_open="No", closed_date=days_ago(100))
+        future = (date.today() + timedelta(days=1000)).strftime('%m-%d-%Y')
+        # Closed account stops aging at its close date (300 day span).
+        self.assertEqual(acc.age_on(future), 300)
+
+
 if __name__ == "__main__":
     unittest.main()
