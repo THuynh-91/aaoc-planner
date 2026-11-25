@@ -34,6 +34,7 @@ The AAOC Calculator helps users manage their credit accounts and plan future cre
 - **Real Account Validation**: Ensures only past/present dates for actual accounts
 - **Multiple Portfolio Support**: Create and manage separate portfolios
 - **AAOC Calculation**: Calculate current Average Age of Credit with detailed formatting
+- **AAOC Timeline**: An ASCII bar per account showing its age, flagging which accounts pull the average up (`+`) or down (`v`)
 
 ### Planning Scenarios
 1. **Future AAOC Projection**: "What will my AAOC be on a specific date?"
@@ -49,20 +50,27 @@ The AAOC Calculator helps users manage their credit accounts and plan future cre
 ## Installation
 
 ### Prerequisites
-- Python 3.8+
+- Python 3.10+ (the code uses the `str | None` type syntax)
 - No external dependencies required (uses only standard library)
 
 ### Setup
 1. Clone the repository:
 ```bash
-git clone https://github.com/THuynh-91/aaoc-calculator.git
-cd aaoc-calculator
+git clone https://github.com/THuynh-91/aaoc-planner.git
+cd aaoc-planner
 ```
 
-2. Run the application:
+2. Run the application from the repository root (`aaoc_project` is a package):
 ```bash
-python cli.py
+python -m aaoc_project
 ```
+
+### Running the Tests
+The tests use the standard library's `unittest`, so there is nothing to install:
+```bash
+python -m unittest discover -s aaoc_project -p "test_*.py"
+```
+GitHub Actions runs the same command on Python 3.10 to 3.13 for every push and pull request.
 
 ## Usage
 
@@ -110,13 +118,18 @@ Chase, 03-15-2020
 ## Project Structure
 
 ```
-aaoc_project/
-├── models.py          # Account class with validation and age calculations
-├── portfolio.py       # Portfolio class for account management
-├── planner.py         # Planner class for scenario planning
-├── cli.py             # Command-line interface
-├── utils.py           # Utility functions and tutorial
-└── README.md          # This file
+aaoc-planner/
+├── README.md              # This file
+├── requirements.txt       # No runtime dependencies (documents Python 3.10+)
+└── aaoc_project/          # The package
+    ├── __init__.py        # Public API: Account, Portfolio, Planner, date helpers
+    ├── __main__.py        # Lets `python -m aaoc_project` start the CLI
+    ├── models.py          # Account class with validation and age calculations
+    ├── portfolio.py       # Portfolio class: accounts, AAOC, timeline breakdown
+    ├── planner.py         # Planner class for scenario planning
+    ├── cli.py             # Command-line interface
+    ├── utils.py           # Date/age helpers, timeline rendering and tutorial
+    └── test_aaoc.py       # unittest suite for the core and planner math
 ```
 
 ## Core Classes
