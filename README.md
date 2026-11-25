@@ -102,18 +102,22 @@ Chase, 03-15-2020
 
 ### Main Menu Navigation
 ```
-1. Create Portfolio        - Start a new portfolio
-2. Create Planner          - Run planning scenarios
-3. Exit                    - Close application
-4. Import                  - Load saved portfolio
-5. How to Use              - Detailed tutorial
-6. Select Portfolio        - Switch between portfolios
-7. List Portfolios         - View all portfolios
-8. Delete Portfolio        - Remove portfolio
-9. Select Planner          - Switch planners
-10. List Planners          - View all planners
-11. Delete Planner         - Remove planner
+Portfolio:
+  1. Create Portfolio      - Start a new portfolio
+  2. Select Portfolio      - Switch between portfolios
+  3. List Portfolios       - View all portfolios
+  4. Delete Portfolio      - Remove portfolio
+  5. Import Portfolio      - Load a saved portfolio code
+Planner:
+  6. Create Planner        - Run planning scenarios (needs a portfolio with accounts)
+  7. Select Planner        - Switch planners
+  8. List Planners         - View all planners
+  9. Delete Planner        - Remove planner
+Other:
+  10. How to Use           - Detailed tutorial
+  0. Exit                  - Close application
 ```
+Leaving any prompt blank cancels it, and Ctrl-C exits safely from anywhere.
 
 ## Project Structure
 
@@ -129,7 +133,8 @@ aaoc-planner/
     ├── planner.py         # Planner class for scenario planning
     ├── cli.py             # Command-line interface
     ├── utils.py           # Date/age helpers, timeline rendering and tutorial
-    └── test_aaoc.py       # unittest suite for the core and planner math
+    ├── test_aaoc.py       # unittest suite for the core and planner math
+    └── test_cli.py        # CLI tests that drive every menu flow with mocked input
 ```
 
 ## Core Classes
