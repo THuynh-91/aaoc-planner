@@ -12,3 +12,9 @@ env/
 .DS_Store
 .idea/
 .vscode/
+
+# Web view build output (rebuilt by CI)
+web/core/target/
+web/app/node_modules/
+web/app/dist/
+web/app/aaoc_core.wasm
