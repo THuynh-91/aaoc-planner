@@ -316,29 +316,17 @@ class CLI:
         try:
             target_years = int(input("Enter target years: ").strip())
             target_months = int(input("Enter target months (0-11): ").strip())
-            
-            print(f"Debug: Parsed target_years={target_years}, target_months={target_months}")
-            
+
             if target_years < 0 or target_months < 0 or target_months > 11:
                 print("Invalid input. Years must be >= 0, months must be 0-11.")
                 return
-            
-            print("Debug: About to call planner method...")
+
             result = self.current_planner.time_to_target_aaoc(target_years, target_months)
-            print(f"Debug: Got result: {result}")
             print(f"\nResult: {result}")
-            
-        except ValueError as ve:
-            print(f"Debug: ValueError caught: {ve}")
-            print(f"Debug: ValueError type: {type(ve)}")
-            import traceback
-            traceback.print_exc()
+
+        except ValueError:
             print("Error: Please enter valid numbers for years and months.")
         except Exception as e:
-            print(f"Debug: Other exception: {e}")
-            print(f"Debug: Exception type: {type(e)}")
-            import traceback
-            traceback.print_exc()
             print(f"Error: {e}")
         
         input("\nPress Enter to continue...")
@@ -350,17 +338,14 @@ class CLI:
         try:
             min_years = int(input("Enter minimum AAOC years: ").strip())
             min_months = int(input("Enter minimum AAOC months (0-11): ").strip())
-            
-            print(f"Debug: min_years={min_years}, min_months={min_months}")  # Add this line
-            
+
             if min_years < 0 or min_months < 0 or min_months > 11:
                 print("Invalid input. Years must be >= 0, months must be 0-11.")
                 return
-            
+
             result = self.current_planner.earliest_new_account_date(min_years, min_months)
             print(f"\nResult: {result}")
-        except ValueError as ve:
-            print(f"ValueError details: {ve}")  # Add this line
+        except ValueError:
             print("Error: Please enter valid numbers for years and months.")
         except Exception as e:
             print(f"Error: {e}")

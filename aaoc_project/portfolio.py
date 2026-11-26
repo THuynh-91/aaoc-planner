@@ -40,6 +40,9 @@ class Portfolio():
         return list(self.accounts.values())
 
     def calculate_aaoc(self):
+        if not self.accounts:
+            raise ValueError("Cannot calculate AAOC with no accounts in portfolio.")
+
         total_days = 0
         for account in self.accounts.values():
             total_days += account.current_age()

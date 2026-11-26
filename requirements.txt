@@ -1,0 +1,8 @@
+# AAOC Calculator runtime dependencies.
+# The application uses only the Python standard library (datetime, calendar,
+# copy, json, base64, re). No third-party packages are required at runtime.
+#
+# Requires Python 3.10+ (uses the `str | None` union type syntax).
+#
+# Development / testing uses the standard library `unittest`, so no extra
+# packages are needed there either.
