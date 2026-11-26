@@ -1,0 +1,11 @@
+{
+  "name": "aaoc-planner-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

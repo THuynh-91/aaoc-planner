@@ -1,0 +1,79 @@
+name: web view
+
+# Builds the browser version (web/): the Rust core compiled to WebAssembly and the TypeScript front end. On every
+# push and PR it checks the Rust core still gives the Python package's answers; on main it publishes to GitHub Pages.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust with the WebAssembly target
+        run: |
+          rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
+          rustup default stable
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: The parity cases are still the Python package's answers
+        run: |
+          python web/gen_parity.py
+          git diff --exit-code web/core/tests/parity.txt
+
+      - name: Rust tests (unit tests and the 2,005 parity answers)
+        run: cargo test --manifest-path web/core/Cargo.toml
+
+      - name: Build the WebAssembly core
+        run: |
+          cargo build --release --target wasm32-unknown-unknown --manifest-path web/core/Cargo.toml
+          cp web/core/target/wasm32-unknown-unknown/release/aaoc_core.wasm web/app/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build the TypeScript front end
+        working-directory: web/app
+        run: |
+          npm ci
+          npm run build
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site/dist
+          cp web/app/index.html web/app/style.css web/app/aaoc_core.wasm _site/
+          cp web/app/dist/*.js _site/dist/
+          ls -la _site _site/dist
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AAOC Planner</title>
+  <meta name="description" content="See your average age of credit and plan around it: when you'll reach a target, and the earliest you can open a new account. The math runs in Rust compiled to WebAssembly.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%231f6f50%27/%3E%3Crect x=%277%27 y=%2710%27 width=%2718%27 height=%273%27 rx=%271.5%27 fill=%27white%27/%3E%3Crect x=%277%27 y=%2715%27 width=%2712%27 height=%273%27 rx=%271.5%27 fill=%27white%27/%3E%3Crect x=%277%27 y=%2720%27 width=%276%27 height=%273%27 rx=%271.5%27 fill=%27white%27/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./dist/main.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <p class="kicker">Average age of credit</p>
+      <h1>AAOC Planner</h1>
+      <p class="lede">Every credit tracker shows how old each account is. This one shows how they add up, which accounts pull your average down, and when you can open a new one without dropping below your target.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p id="status" class="status">Loading the calculator…</p>
+    <div id="app" hidden>
+      <section class="card" aria-labelledby="accounts-h">
+        <div class="card-head">
+          <h2 id="accounts-h">Your accounts</h2>
+          <label class="name-field">Portfolio <input id="portfolio-name" aria-label="Portfolio name"></label>
+        </div>
+        <div class="table-scroll">
+          <table class="accounts">
+            <thead><tr><th>Name</th><th>Type</th><th>Opened</th><th>Closed <span class="muted">(empty if open)</span></th><th><span class="sr">Remove</span></th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="actions">
+          <button type="button" id="add" class="primary">Add account</button>
+          <button type="button" id="example">Load the example</button>
+          <button type="button" id="clear">Clear</button>
+        </div>
+        <details class="codes">
+          <summary>Share or back up with a portfolio code</summary>
+          <p class="muted">The same codes the command-line tool exports and imports (<code>python -m aaoc_project</code>). Nothing leaves your browser; accounts are kept in this browser only.</p>
+          <textarea id="code" rows="3" spellcheck="false" aria-label="Portfolio code"></textarea>
+          <div class="actions"><button type="button" id="export">Copy a code</button><button type="button" id="import">Import this code</button></div>
+          <p id="code-note" class="muted" aria-live="polite"></p>
+        </details>
+      </section>
+
+      <section class="card summary" aria-labelledby="summary-h">
+        <h2 id="summary-h" class="sr">Average age today</h2>
+        <p class="big" id="aaoc">—</p>
+        <p class="muted" id="aaoc-note"></p>
+        <svg id="timeline" class="timeline" viewBox="0 0 640 40" role="img" aria-label="Each account's age as a bar, with the average marked"></svg>
+        <p class="legend"><span class="item"><span class="key is-above"></span>raises the average</span><span class="item"><span class="key is-below"></span>lowers it</span><span class="item"><span class="key is-closed"></span>closed (stopped aging)</span></p>
+      </section>
+
+      <section aria-labelledby="plan-h">
+        <h2 id="plan-h" class="section-title">Plan ahead</h2>
+        <div class="plans">
+          <article class="card plan">
+            <h3>Your average on a date</h3>
+            <label>Date <input type="date" id="future-date"></label>
+            <p class="result" id="plan-future" aria-live="polite"></p>
+          </article>
+          <article class="card plan">
+            <h3>If you open a new account</h3>
+            <div class="pair"><label>Opened <input type="date" id="new-opened"></label><label>Measured on <input type="date" id="new-measured"></label></div>
+            <p class="result" id="plan-new" aria-live="polite"></p>
+          </article>
+          <article class="card plan">
+            <h3>When will it reach…</h3>
+            <div class="pair"><label>Years <input type="number" min="0" max="80" id="target-years" value="5"></label><label>Months <input type="number" min="0" max="11" id="target-months" value="0"></label></div>
+            <p class="result" id="plan-target" aria-live="polite"></p>
+          </article>
+          <article class="card plan">
+            <h3>Earliest day to open a new account</h3>
+            <p class="hint">and still keep at least</p>
+            <div class="pair"><label>Years <input type="number" min="0" max="80" id="min-years" value="3"></label><label>Months <input type="number" min="0" max="11" id="min-months" value="0"></label></div>
+            <p class="result" id="plan-earliest" aria-live="polite"></p>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="wrap foot">
+    <p>The math runs in <b>Rust compiled to WebAssembly</b> (<span id="wasm-size">22 KB</span>, no dependencies) and gives the same answers as the Python command-line tool on 2,005 test cases, checked on every push. <a href="https://github.com/THuynh-91/aaoc-planner">Source on GitHub</a>.</p>
+  </footer>
+</body>
+</html>

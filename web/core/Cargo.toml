@@ -1,0 +1,19 @@
+[package]
+name = "aaoc-core"
+version = "0.1.0"
+edition = "2024"
+description = "The AAOC planner's date math in Rust, compiled to WebAssembly for the web view. Matches the Python package."
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# No dependencies: the WebAssembly boundary is hand-written (see src/lib.rs, "WebAssembly exports").
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

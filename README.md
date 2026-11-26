@@ -4,9 +4,12 @@ A comprehensive Python application for managing credit accounts and planning cre
 https://github.com/THuynh-91/AAOC/blob/main/main.py (Old Version)<br>
 Decided to implement a improved version of this CLI with more features, and OOP
 
+**Try it in your browser: https://thuynh-91.github.io/aaoc-planner/** (no install; your accounts stay in your browser)
+
 ## Table of Contents
 - [Overview](#overview)
 - [Features](#features)
+- [Web View (Rust + WebAssembly)](#web-view-rust--webassembly)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Project Structure](#project-structure)
@@ -47,6 +50,33 @@ The AAOC Calculator helps users manage their credit accounts and plan future cre
 - **Multiple Portfolios**: Manage different account collections
 - **Data Validation**: Comprehensive input validation and error handling
 
+## Web View (Rust + WebAssembly)
+
+The browser version at https://thuynh-91.github.io/aaoc-planner/ runs the same math as the CLI, ported to Rust and compiled to
+WebAssembly (about 22 KB, no dependencies). The page is TypeScript with no framework: an account editor, the AAOC with a
+timeline of which accounts raise or lower it, and the four planning scenarios. Portfolio codes are shared with the CLI, so
+a code exported in one imports in the other.
+
+- `web/core/`: the Rust crate. Dates are whole days since 1970 (a Gregorian calendar from scratch, month stepping that
+  clamps Jan 31 to Feb 28/29 like the Python `add_months`), and the WebAssembly boundary is hand-written: accounts go
+  into the module's memory as pairs of integers.
+- `web/gen_parity.py`: runs the Python package on 400 random portfolios (plus 32-account portfolios that land exactly
+  on half a month, where Python's half-to-even rounding matters) and records its 2,005 answers.
+  `cargo test` must reproduce every one word for word, and CI regenerates the file and fails if it changed, so the
+  two implementations cannot drift apart.
+- `web/app/`: the page (`index.html`, `style.css`, `src/*.ts`).
+- `.github/workflows/web.yml`: tests, builds and publishes to GitHub Pages on every push to `main`.
+
+Build it locally:
+
+```bash
+rustup target add wasm32-unknown-unknown
+cargo test --manifest-path web/core/Cargo.toml
+cargo build --release --target wasm32-unknown-unknown --manifest-path web/core/Cargo.toml
+cp web/core/target/wasm32-unknown-unknown/release/aaoc_core.wasm web/app/
+cd web/app && npm ci && npm run build && python -m http.server 8000
+```
+
 ## Installation
 
 ### Prerequisites
@@ -64,6 +94,14 @@ cd aaoc-planner
 ```bash
 python -m aaoc_project
 ```
+
+### Optional Web UI (Streamlit)
+An interactive web UI is built on the same core classes. It is the only part of the project that needs a third-party package:
+```bash
+pip install streamlit
+python -m streamlit run streamlit_app.py
+```
+It offers a portfolio editor, the AAOC metric, a horizontal age-timeline chart (flagging which accounts are above or below the average), the four planning scenarios as forms, and export/import. The command-line tool stays dependency-free.
 
 ### Running the Tests
 The tests use the standard library's `unittest`, so there is nothing to install:
@@ -125,6 +163,8 @@ Leaving any prompt blank cancels it, and Ctrl-C exits safely from anywhere.
 aaoc-planner/
 ├── README.md              # This file
 ├── requirements.txt       # No runtime dependencies (documents Python 3.10+)
+├── streamlit_app.py       # Optional web UI (needs streamlit)
+├── web/                   # Browser version: Rust core (core/) -> WebAssembly, TypeScript page (app/), parity cases
 └── aaoc_project/          # The package
     ├── __init__.py        # Public API: Account, Portfolio, Planner, date helpers
     ├── __main__.py        # Lets `python -m aaoc_project` start the CLI
