@@ -1,9 +1,9 @@
 from datetime import date, timedelta
 import calendar
 from copy import deepcopy
-from models import Account
-from portfolio import Portfolio  
-from utils import valid_date, age_format, valid_closed_date, valid_planning_date
+from .models import Account
+from .portfolio import Portfolio
+from .utils import valid_date, age_format, valid_closed_date, valid_planning_date
 
 def add_months(source_date, months):
     month = source_date.month - 1 + months
@@ -25,6 +25,25 @@ class Planner():
 
     def _create_working_copy(self):
         return deepcopy(self.original_portfolio.accounts)
+
+    def _hypothetical_key(self, accounts: dict):
+        """Return a dict key for a hypothetical account that cannot collide
+        with any real account name already present in ``accounts``."""
+        key = "__hypothetical_new__"
+        while key in accounts:
+            key += "_"
+        return key
+
+    def _accounts_with_hypothetical(self, new_acc_dt: date):
+        """Return a shallow copy of the working accounts plus a brand-new
+        hypothetical account opened on ``new_acc_dt`` under a non-colliding key.
+        """
+        temp_accounts = self.working_accounts.copy()
+        temp_account = Account("Hypothetical New Account",
+                               date.today().strftime('%m-%d-%Y'))
+        temp_account.date_opened = new_acc_dt
+        temp_accounts[self._hypothetical_key(temp_accounts)] = temp_account
+        return temp_accounts
     
     def add_hypothetical_account(self, account: Account):
         if account.name in self.working_accounts:
@@ -62,21 +81,21 @@ class Planner():
     def calculate_aaoc_with_new_account(self, new_account_date: str, target_date: str):
         new_acc_dt = valid_planning_date(new_account_date)
         target_dt = valid_planning_date(target_date)
-        
+
         if not valid_closed_date(new_acc_dt, target_dt) and new_acc_dt != target_dt:
             raise ValueError("New Account must be made before target date")
-        
-        temp_accounts = self.working_accounts.copy()
-        
-        temp_account = Account("Temp1", date.today().strftime('%m-%d-%Y'))
-        temp_account.date_opened = new_acc_dt  
-        temp_accounts["TempAcc"] = temp_account
 
+        temp_accounts = self._accounts_with_hypothetical(new_acc_dt)
         return self._calculate_aaoc_for_date(temp_accounts, target_dt)
-                    
+
+
+    def _aaoc_decimal_with_new_account(self, new_acc_dt: date, target_dt: date):
+        """AAOC (in years) at target_dt if a new account is opened on new_acc_dt."""
+        temp_accounts = self._accounts_with_hypothetical(new_acc_dt)
+        return self._calculate_aaoc_decimal(temp_accounts, target_dt)
 
     def calculate_future_aaoc(self, target_date: str):
-        target_dt = valid_planning_date(target_date)  
+        target_dt = valid_planning_date(target_date)
         return self._calculate_aaoc_for_date(self.working_accounts, target_dt)
         
     def _calculate_aaoc_decimal(self, accounts, target_dt):
@@ -127,16 +146,16 @@ class Planner():
         iterations = 0
         
         while iterations < 9999:
-            aaoc_result = self.calculate_aaoc_with_new_account(temp_date.strftime('%m-%d-%Y'), temp_date.strftime('%m-%d-%Y'))
-            parts = aaoc_result.split(" years and ")
-            years = int(parts[0])
-            months = int(parts[1].replace(" months", ""))
+            # Open the new account on temp_date and measure the AAOC that same
+            # day (the worst case, since the new account is brand new then).
+            aaoc_decimal = self._aaoc_decimal_with_new_account(temp_date, temp_date)
 
-            parsed_decimal = years + (months / 12)
+            if aaoc_decimal >= min_aaoc_decimal:
+                return (f"You can open a new account on "
+                        f"{temp_date.strftime('%m-%d-%Y')} and maintain "
+                        f"minimum AAOC of {min_aaoc_years} years "
+                        f"{min_aaoc_months} months")
 
-            if parsed_decimal >= min_aaoc_decimal:
-                return f"You can open a new account on {temp_date.strftime('%m-%d-%Y')} and maintain minimum AAOC"
-            
             temp_date = add_months(temp_date, 1)
             iterations += 1
         return "Target AAOC not reachable within reasonable timeframe"
